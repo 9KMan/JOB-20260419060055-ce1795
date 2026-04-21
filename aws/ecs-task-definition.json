@@ -1,0 +1,105 @@
+{
+  "containerDefinitions": [
+    {
+      "name": "mvp-backend",
+      "image": "926920254602.dkr.ecr.us-east-1.amazonaws.com/mvp-backend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "SUPABASE_URL",
+          "value": "${SUPABASE_URL}"
+        },
+        {
+          "name": "SUPABASE_KEY",
+          "value": "${SUPABASE_KEY}"
+        },
+        {
+          "name": "OPENAI_API_KEY",
+          "value": "${OPENAI_API_KEY}"
+        },
+        {
+          "name": "POSTGRES_HOST",
+          "value": "${POSTGRES_HOST}"
+        },
+        {
+          "name": "POSTGRES_PORT",
+          "value": "5432"
+        },
+        {
+          "name": "POSTGRES_DB",
+          "value": "${POSTGRES_DB}"
+        },
+        {
+          "name": "SECRET_KEY",
+          "value": "${SECRET_KEY}"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/mvp",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "dependsOn": [
+        {
+          "containerName": "mvp-postgres",
+          "condition": "HEALTHY"
+        }
+      ]
+    },
+    {
+      "name": "mvp-postgres",
+      "image": "postgres:15-alpine",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 5432,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "POSTGRES_USER",
+          "value": "${POSTGRES_USER}"
+        },
+        {
+          "name": "POSTGRES_PASSWORD",
+          "value": "${POSTGRES_PASSWORD}"
+        },
+        {
+          "name": "POSTGRES_DB",
+          "value": "${POSTGRES_DB}"
+        }
+      ],
+      "healthCheck": {
+        "retries": 3,
+        "command": ["PGDATA=/var/lib/postgresql/data pg_isready"],
+        "timeout": 5,
+        "interval": 10
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/mvp",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ],
+  "family": "mvp-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::926920254602:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::926920254602:role/ecsTaskRole"
+}
